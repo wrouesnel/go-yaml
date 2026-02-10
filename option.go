@@ -118,6 +118,16 @@ func CustomUnmarshaler[T any](unmarshaler func(*T, []byte) error) DecodeOption {
 	}
 }
 
+// CustomTypeUnmarshaler overrides any decoding process for the type specified in the arguments.
+func CustomTypeUnmarshaler(typ reflect.Type, unmarshaler func(interface{}, []byte) error) DecodeOption {
+	return func(d *Decoder) error {
+		d.customUnmarshalerMap[typ] = func(ctx context.Context, v interface{}, b []byte) error {
+			return unmarshaler(v, b)
+		}
+		return nil
+	}
+}
+
 // CustomUnmarshalerContext overrides any decoding process for the type specified in generics.
 // Similar to CustomUnmarshaler, but allows passing a context to the unmarshaler function.
 func CustomUnmarshalerContext[T any](unmarshaler func(context.Context, *T, []byte) error) DecodeOption {
@@ -125,6 +135,16 @@ func CustomUnmarshalerContext[T any](unmarshaler func(context.Context, *T, []byt
 		var typ *T
 		d.customUnmarshalerMap[reflect.TypeOf(typ)] = func(ctx context.Context, v interface{}, b []byte) error {
 			return unmarshaler(ctx, v.(*T), b)
+		}
+		return nil
+	}
+}
+
+// CustomTypeUnmarshalerContext overrides any decoding process for the type specified in the arguments.
+func CustomTypeUnmarshalerContext(typ reflect.Type, unmarshaler func(context.Context, interface{}, []byte) error) DecodeOption {
+	return func(d *Decoder) error {
+		d.customUnmarshalerMap[typ] = func(ctx context.Context, v interface{}, b []byte) error {
+			return unmarshaler(ctx, v, b)
 		}
 		return nil
 	}
@@ -229,6 +249,16 @@ func CustomMarshaler[T any](marshaler func(T) ([]byte, error)) EncodeOption {
 	}
 }
 
+// CustomMarshaler overrides any encoding process for the type specified in the arguments
+func CustomTypeMarshaler(rtyp reflect.Type, marshaler func(interface{}) ([]byte, error)) EncodeOption {
+	return func(e *Encoder) error {
+		e.customMarshalerMap[rtyp] = func(ctx context.Context, v interface{}) ([]byte, error) {
+			return marshaler(v)
+		}
+		return nil
+	}
+}
+
 // CustomMarshalerContext overrides any encoding process for the type specified in generics.
 // Similar to CustomMarshaler, but allows passing a context to the marshaler function.
 func CustomMarshalerContext[T any](marshaler func(context.Context, T) ([]byte, error)) EncodeOption {
@@ -237,6 +267,16 @@ func CustomMarshalerContext[T any](marshaler func(context.Context, T) ([]byte, e
 		rtyp := reflect.Indirect(reflect.ValueOf(typ)).Type()
 		e.customMarshalerMap[rtyp] = func(ctx context.Context, v interface{}) ([]byte, error) {
 			return marshaler(ctx, v.(T))
+		}
+		return nil
+	}
+}
+
+// CustomTypeMarshalerContext overrides any encoding process for the type specified in the arguments
+func CustomTypeMarshalerContext(rtyp reflect.Type, marshaler func(context.Context, interface{}) ([]byte, error)) EncodeOption {
+	return func(e *Encoder) error {
+		e.customMarshalerMap[rtyp] = func(ctx context.Context, v interface{}) ([]byte, error) {
+			return marshaler(ctx, v)
 		}
 		return nil
 	}
