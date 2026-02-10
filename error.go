@@ -75,3 +75,13 @@ func IsInvalidAnchorNameError(err error) bool {
 func IsInvalidAliasNameError(err error) bool {
 	return errors.Is(err, ast.ErrInvalidAliasName)
 }
+
+// ErrContinue is a special type which can be returned by a custom marshaler or
+// unmarshaler to skip the current function call and continue normal decoding.
+// This can be used to break decoding loops.
+type ErrContinue struct {
+}
+
+func (e ErrContinue) Error() string {
+	return "continue normal decoding"
+}

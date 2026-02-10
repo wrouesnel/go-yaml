@@ -455,10 +455,13 @@ func (e *Encoder) encodeValue(ctx context.Context, v reflect.Value, column int) 
 	}
 	if e.canEncodeByMarshaler(v) {
 		node, err := e.encodeByMarshaler(ctx, v, column)
-		if err != nil {
-			return nil, err
+		// check if marshaler wants normal behavior
+		if _, shouldContinue := err.(*ErrContinue); !shouldContinue {
+			if err != nil {
+				return nil, err
+			}
+			return node, nil
 		}
-		return node, nil
 	}
 	switch v.Type().Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:

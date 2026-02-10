@@ -910,10 +910,14 @@ func (d *Decoder) decodeValue(ctx context.Context, dst reflect.Value, src ast.No
 		return nil
 	}
 	if d.canDecodeByUnmarshaler(dst) {
-		if err := d.decodeByUnmarshaler(ctx, dst, src); err != nil {
-			return err
+		err := d.decodeByUnmarshaler(ctx, dst, src)
+		// check if unmarshaler wants normal decoding behavior
+		if _, shouldContinue := err.(*ErrContinue); !shouldContinue {
+			if err != nil {
+				return err
+			}
+			return nil
 		}
-		return nil
 	}
 	valueType := dst.Type()
 	switch valueType.Kind() {
@@ -1749,11 +1753,17 @@ func (d *Decoder) decodeMap(ctx context.Context, dst reflect.Value, src ast.Node
 		}
 
 		k := d.createDecodableValue(keyType)
-		if d.canDecodeByUnmarshaler(k) {
-			if err := d.decodeByUnmarshaler(ctx, k, key); err != nil {
-				return err
+		useUnmarshaler := d.canDecodeByUnmarshaler(k)
+		if useUnmarshaler {
+			err := d.decodeByUnmarshaler(ctx, k, key)
+			if _, shouldContinue := err.(*ErrContinue); !shouldContinue {
+				if err != nil {
+					return err
+				}
 			}
-		} else {
+		}
+
+		if !useUnmarshaler {
 			keyVal, err := d.createDecodedNewValue(ctx, keyType, reflect.Value{}, key)
 			if err != nil {
 				return err
