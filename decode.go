@@ -770,6 +770,18 @@ func (d *Decoder) decodeByUnmarshaler(ctx context.Context, dst reflect.Value, sr
 		if err != nil {
 			return err
 		}
+		// FIXME:HACK: if b comes back empty, just try decoding and re-encoding to a map.
+		if len(b) == 0 {
+			m := map[string]interface{}{}
+			if err := d.DecodeFromNodeContext(ctx, src, &m); err != nil {
+				return err
+			}
+			buf := bytes.NewBuffer([]byte{})
+			if err := NewEncoder(buf).EncodeContext(ctx, &m); err != nil {
+				return err
+			}
+			b = buf.Bytes()
+		}
 		if err := unmarshaler(ctx, ptrValue.Interface(), b); err != nil {
 			return err
 		}
@@ -1383,6 +1395,7 @@ func (d *Decoder) decodeStruct(ctx context.Context, dst reflect.Value, src ast.N
 				fieldValue.Set(reflect.Zero(fieldValue.Type()))
 				continue
 			}
+
 			mapNode := ast.Mapping(nil, false)
 			for k, v := range keyToNodeMap {
 				key := &ast.StringNode{BaseNode: &ast.BaseNode{}, Value: k}
