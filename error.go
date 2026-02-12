@@ -85,3 +85,14 @@ type ErrContinue struct {
 func (e ErrContinue) Error() string {
 	return "continue normal decoding"
 }
+
+// ErrSubstitute is a special type which can be returned by a custom marshaler or
+// unmarshaler to skip the current function call and continue normal decoding
+// but _replacing_ the object being decoded with the one in the error.
+type ErrSubstitute struct {
+	Substitute any
+}
+
+func (e ErrSubstitute) Error() string {
+	return fmt.Sprintf("substitute value for %T", e.Substitute)
+}

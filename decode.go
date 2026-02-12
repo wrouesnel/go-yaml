@@ -924,7 +924,16 @@ func (d *Decoder) decodeValue(ctx context.Context, dst reflect.Value, src ast.No
 	if d.canDecodeByUnmarshaler(dst) {
 		err := d.decodeByUnmarshaler(ctx, dst, src)
 		// check if unmarshaler wants normal decoding behavior
-		if _, shouldContinue := err.(*ErrContinue); !shouldContinue {
+		shouldContinue := false
+		switch err.(type) {
+		case *ErrContinue:
+			shouldContinue = true
+			//case *ErrSubstitute:
+			//	// User is requesting replacement of the encoding type
+			//	shouldContinue = true
+			//	v = reflect.ValueOf(err.Substitute)
+		}
+		if !shouldContinue {
 			if err != nil {
 				return err
 			}

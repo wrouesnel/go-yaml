@@ -456,7 +456,16 @@ func (e *Encoder) encodeValue(ctx context.Context, v reflect.Value, column int) 
 	if e.canEncodeByMarshaler(v) {
 		node, err := e.encodeByMarshaler(ctx, v, column)
 		// check if marshaler wants normal behavior
-		if _, shouldContinue := err.(*ErrContinue); !shouldContinue {
+		shouldContinue := false
+		switch err := err.(type) {
+		case *ErrContinue:
+			shouldContinue = true
+		case *ErrSubstitute:
+			// User is requesting replacement of the encoding type
+			shouldContinue = true
+			v = reflect.ValueOf(err.Substitute)
+		}
+		if !shouldContinue {
 			if err != nil {
 				return nil, err
 			}
