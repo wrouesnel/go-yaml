@@ -917,6 +917,19 @@ func (n *LiteralNode) GetValue() interface{} {
 func (n *LiteralNode) String() string {
 	origin := n.Value.GetToken().Origin
 	lit := strings.TrimRight(strings.TrimRight(origin, " "), "\n")
+
+	// Multi-line strings need to have subseuqent lines to the first indented
+	// to match the position
+	indent := strings.Repeat(" ", n.Value.Token.Position.Column)
+	lbc := token.DetectLineBreakCharacter(lit)
+	if strings.Contains(lit, lbc) {
+		values := []string{}
+		for _, v := range strings.Split(lit, lbc) {
+			values = append(values, fmt.Sprintf("%s%s", indent, v))
+		}
+		lit = strings.Join(values, lbc)
+	}
+
 	if n.Comment != nil {
 		return fmt.Sprintf("%s %s\n%s", n.Start.Value, n.Comment.String(), lit)
 	}
